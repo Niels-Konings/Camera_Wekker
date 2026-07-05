@@ -57,8 +57,8 @@ jobs:
             await saveFile('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js','www/vendor/coco-ssd.min.js');
             await saveFile('https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js','www/vendor/mobilenet.min.js');
             await saveModel([
-              {base:'https://storage.googleapis.com/tfjs-models/savedmodel/ssd_mobilenet_v2/'},
-              {base:'https://storage.googleapis.com/tfjs-models/savedmodel/ssdlite_mobilenet_v2/'}
+              {base:'https://storage.googleapis.com/tfjs-models/savedmodel/ssdlite_mobilenet_v2/'},
+              {base:'https://storage.googleapis.com/tfjs-models/savedmodel/ssd_mobilenet_v2/'}
             ],'www/models/coco-ssd');
             await saveModel([
               {base:'https://storage.googleapis.com/tfhub-tfjs-modules/google/imagenet/mobilenet_v2_100_224/classification/2/'},
@@ -67,9 +67,22 @@ jobs:
             console.log('Klaar: alle bibliotheken en modellen opgehaald.');
           })().catch(e=>{ console.error('FOUT:',e.message); process.exit(1); });
           NODE
+          echo "== gedownloade modelbestanden =="
+          ls -la www/models/coco-ssd www/models/mobilenet www/vendor
 
       - name: Android-platform toevoegen
         run: npx cap add android
+
+      - name: Web-assets forceren (model + bibliotheken echt in de app)
+        run: |
+          ASSETS=android/app/src/main/assets/public
+          mkdir -p "$ASSETS/models" "$ASSETS/vendor"
+          cp -r www/models/. "$ASSETS/models/"
+          cp -r www/vendor/. "$ASSETS/vendor/"
+          echo "== gebundelde coco-bestanden in de APK =="
+          ls -la "$ASSETS/models/coco-ssd/"
+          echo "== gebundelde mobilenet-bestanden in de APK =="
+          ls -la "$ASSETS/models/mobilenet/"
 
       - name: Permissies in manifest zetten
         run: node scripts/patch-android.js
