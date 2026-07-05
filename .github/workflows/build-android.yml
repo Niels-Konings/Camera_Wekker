@@ -1,7 +1,7 @@
 name: Bouw Android APK
 
 on:
-  workflow_dispatch:        # handmatig starten via de Actions-tab
+  workflow_dispatch:
   push:
     branches: [ main ]
 
@@ -19,6 +19,53 @@ jobs:
 
       - name: Afhankelijkheden installeren
         run: npm ci
+
+      - name: Model + bibliotheken downloaden (offline meebundelen)
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'), path=require('path');
+          async function get(url){
+            const r=await fetch(url,{redirect:'follow'});
+            if(!r.ok) throw new Error('HTTP '+r.status+' bij '+url);
+            return Buffer.from(await r.arrayBuffer());
+          }
+          async function saveFile(url,dest){
+            const b=await get(url);
+            fs.mkdirSync(path.dirname(dest),{recursive:true});
+            fs.writeFileSync(dest,b);
+            console.log('OK',dest,'('+b.length+' bytes)');
+          }
+          async function saveModel(candidates,dir){
+            fs.mkdirSync(dir,{recursive:true});
+            let ok=false, lastErr;
+            for(const c of candidates){
+              try{
+                const mjBuf=await get(c.base+'model.json'+(c.q||''));
+                const mj=JSON.parse(mjBuf.toString());
+                fs.writeFileSync(path.join(dir,'model.json'),JSON.stringify(mj));
+                console.log('OK',path.join(dir,'model.json'),'via',c.base);
+                const shards=new Set();
+                (mj.weightsManifest||[]).forEach(g=>(g.paths||[]).forEach(p=>shards.add(p)));
+                for(const s of shards){ await saveFile(c.base+s+(c.q||''), path.join(dir,s)); }
+                ok=true; break;
+              }catch(e){ console.log('mislukt via',c.base,'-',e.message); lastErr=e; }
+            }
+            if(!ok) throw lastErr;
+          }
+          (async()=>{
+            await saveFile('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js','www/vendor/tf.min.js');
+            await saveFile('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js','www/vendor/coco-ssd.min.js');
+            await saveFile('https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js','www/vendor/mobilenet.min.js');
+            await saveModel([
+              {base:'https://storage.googleapis.com/tfjs-models/savedmodel/ssdlite_mobilenet_v2/'}
+            ],'www/models/coco-ssd');
+            await saveModel([
+              {base:'https://storage.googleapis.com/tfhub-tfjs-modules/google/imagenet/mobilenet_v2_100_224/classification/2/'},
+              {base:'https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/2/', q:'?tfjs-format=file'}
+            ],'www/models/mobilenet');
+            console.log('Klaar: alle bibliotheken en modellen opgehaald.');
+          })().catch(e=>{ console.error('FOUT:',e.message); process.exit(1); });
+          NODE
 
       - name: Android-platform toevoegen
         run: npx cap add android
