@@ -57,6 +57,7 @@ jobs:
             await saveFile('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js','www/vendor/coco-ssd.min.js');
             await saveFile('https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js','www/vendor/mobilenet.min.js');
             await saveModel([
+              {base:'https://storage.googleapis.com/tfjs-models/savedmodel/ssd_mobilenet_v2/'},
               {base:'https://storage.googleapis.com/tfjs-models/savedmodel/ssdlite_mobilenet_v2/'}
             ],'www/models/coco-ssd');
             await saveModel([
