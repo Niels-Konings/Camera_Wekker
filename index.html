@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Camera-Wekker">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Camera-Wekker</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ====== STARTSCHERM ====== -->
+  <section id="screen-home" class="screen">
+    <div class="topbar">
+      <h1>Wekker</h1>
+      <button id="homeMenuBtn" class="tb-btn icon" aria-label="Instellingen">⚙️</button>
+    </div>
+    <div id="homeBanner"></div>
+    <div class="next-alarm empty" id="nextAlarm">Geen alarm ingesteld</div>
+    <div id="alarmList" class="alarm-list"></div>
+    <button id="addBtn" class="fab" aria-label="Alarm toevoegen">+</button>
+  </section>
+
+  <!-- ====== EDITOR ====== -->
+  <section id="screen-editor" class="screen offscreen hidden">
+    <div class="topbar">
+      <button id="edCancel" class="tb-btn icon" aria-label="Annuleren">✕</button>
+      <span class="tb-title" id="edTitle">Alarm</span>
+      <button id="edSave" class="tb-btn">Opslaan</button>
+    </div>
+    <div class="editor-body" id="editorBody"></div>
+  </section>
+
+  <!-- ====== TEST ====== -->
+  <section id="screen-test" class="screen offscreen hidden">
+    <div class="topbar">
+      <button id="testBack" class="tb-btn icon" aria-label="Terug">‹</button>
+      <span class="tb-title" id="testTitle">Test</span>
+      <span style="width:44px"></span>
+    </div>
+    <div class="cam-stage test-stage" id="testStage">
+      <video id="testVideo" playsinline muted autoplay></video>
+      <canvas class="overlay" id="testCanvas"></canvas>
+      <div class="cam-msg" id="testMsg"></div>
+    </div>
+    <div class="test-bar">
+      <div class="test-status"><span class="status-dot" id="testDot"></span><span id="testStatusText">Camera starten…</span></div>
+      <span class="test-pill" id="testPill"></span>
+    </div>
+  </section>
+
+  <!-- ====== AFGAAN ====== -->
+  <section id="screen-ring" class="screen ring offscreen hidden">
+    <div class="ring-top">
+      <div class="ring-time" id="ringTime">06:30</div>
+      <div class="ring-date" id="ringDate"></div>
+      <div class="ring-name" id="ringName"></div>
+    </div>
+    <div class="ring-cam-wrap" id="ringCamWrap">
+      <video id="ringVideo" playsinline muted autoplay></video>
+      <canvas class="overlay" id="ringCanvas"></canvas>
+      <div class="ring-success" id="ringSuccess">✓</div>
+      <div class="cam-msg" id="ringCamMsg"></div>
+      <div class="ring-instruct" id="ringInstruct"></div>
+      <div class="ring-bar" id="ringBar"><span></span></div>
+    </div>
+    <div class="ring-bottom" id="ringBottom"></div>
+  </section>
+
+  <!-- ====== BOTTOM SHEET ====== -->
+  <div class="sheet-scrim" id="scrim"></div>
+  <div class="sheet" id="sheet">
+    <div class="grip"></div>
+    <h2 id="sheetTitle"></h2>
+    <div id="sheetContent"></div>
+  </div>
+
+  <!-- ====== TOAST ====== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ====== iOS INSTALLATIE-TIP ====== -->
+  <div class="install-ios" id="iosHint">
+    <span class="x" id="iosHintClose">✕</span>
+    <b>Op je beginscherm zetten</b><br>
+    Tik op het deel-icoon <b>⬆️</b> onderin Safari en kies <b>“Zet op beginscherm”</b>. Zo werkt de camera-wekker als een echte app.
+  </div>
+
+</div>
+<script src="./app.js"></script>
+</body>
+</html>
