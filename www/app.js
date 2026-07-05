@@ -66,7 +66,7 @@ const MNET_MIN = 0.25;   // minimale kans MobileNet
 const HOLD_TARGET = 5;   // aantal positieve frames om uit te zetten
 const DETECT_MS = 220;   // tijd tussen detecties
 
-const DISMISS_LOCK_MS = 3 * 60000; // alarm moet 3 min klinken voor je kunt uitzetten
+const DISMISS_LOCK_MS = 0; // 0 = zodra het object herkend is, gaat het alarm meteen uit
 const SNOOZE_MIN = 5;              // één keer 5 minuten sluimeren, daarna niet meer
 const ESCAPE_AFTER_UNLOCK_MS = 90000; // noodknop pas 90s na ontgrendeling (voor als herkenning faalt)
 
@@ -834,7 +834,7 @@ function fireAlarm(a, opts){
     if(a.cameraOn && ringHeld) $('ringInstruct').innerHTML=`Herkend ✓ · uitzetten over <span class="target">${mm}:${pad(ss)}</span>`;
     else $('ringInstruct').innerHTML=`${dice}Uitzetten kan over <span class="target">${mm}:${pad(ss)}</span>`;
   };
-  updLock(); ringCountdownTimer=setInterval(updLock,1000);
+  updLock(); if(DISMISS_LOCK_MS>0) ringCountdownTimer=setInterval(updLock,1000);
 
   if(a.cameraOn){
     $('ringCamMsg').innerHTML=`<div class="spinner"></div><div>Camera starten…</div>`;
