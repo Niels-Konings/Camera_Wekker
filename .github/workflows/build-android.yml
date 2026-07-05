@@ -42,11 +42,17 @@ jobs:
               try{
                 const mjBuf=await get(c.base+'model.json'+(c.q||''));
                 const mj=JSON.parse(mjBuf.toString());
+                for(const g of (mj.weightsManifest||[])){
+                  const newPaths=[];
+                  for(const p of (g.paths||[])){
+                    const fname = /\.[a-z0-9]+$/i.test(p) ? p : p+'.bin';
+                    await saveFile(c.base+p+(c.q||''), path.join(dir,fname));
+                    newPaths.push(fname);
+                  }
+                  g.paths=newPaths;
+                }
                 fs.writeFileSync(path.join(dir,'model.json'),JSON.stringify(mj));
-                console.log('OK',path.join(dir,'model.json'),'via',c.base);
-                const shards=new Set();
-                (mj.weightsManifest||[]).forEach(g=>(g.paths||[]).forEach(p=>shards.add(p)));
-                for(const s of shards){ await saveFile(c.base+s+(c.q||''), path.join(dir,s)); }
+                console.log('OK',path.join(dir,'model.json'),'via',c.base,'(shards met .bin-extensie)');
                 ok=true; break;
               }catch(e){ console.log('mislukt via',c.base,'-',e.message); lastErr=e; }
             }
@@ -81,8 +87,6 @@ jobs:
           cp -r www/vendor/. "$ASSETS/vendor/"
           echo "== gebundelde coco-bestanden in de APK =="
           ls -la "$ASSETS/models/coco-ssd/"
-          echo "== gebundelde mobilenet-bestanden in de APK =="
-          ls -la "$ASSETS/models/mobilenet/"
 
       - name: Permissies in manifest zetten
         run: node scripts/patch-android.js
