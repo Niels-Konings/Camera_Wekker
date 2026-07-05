@@ -1,0 +1,8 @@
+{
+  "appId": "nl.konings.camerawekker",
+  "appName": "Camera-Wekker",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true
+  }
+}
