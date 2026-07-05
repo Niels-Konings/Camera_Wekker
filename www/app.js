@@ -647,7 +647,19 @@ async function ensureModel(engine){
     if(engine==='coco'){
       try{ await loadScript(LIB.coco); }catch(e){ throw new Error('coco-lib: '+e.message); }
       if(typeof cocoSsd==='undefined') throw new Error('cocoSsd niet gedefinieerd (bestand ontbreekt?)');
-      try{ return await cocoSsd.load({modelUrl:MODEL_URL.coco}); }catch(e){ throw new Error('coco-model: '+e.message); }
+      try{ return await cocoSsd.load({modelUrl:MODEL_URL.coco}); }
+      catch(e){
+        let diag='';
+        try{
+          const mj=await (await fetch(MODEL_URL.coco)).json();
+          const paths=[]; (mj.weightsManifest||[]).forEach(g=>(g.paths||[]).forEach(p=>paths.push(p)));
+          const base=MODEL_URL.coco.replace(/[^/]+$/,'');
+          const info=[];
+          for(const p of paths){ const buf=await (await fetch(base+p)).arrayBuffer(); const h=new Uint8Array(buf.slice(0,1)); info.push(p+'='+buf.byteLength+(h[0]===60?'B(HTML!)':'B')); }
+          diag=' | '+paths.length+' shard(s): '+info.join(', ');
+        }catch(de){ diag=' | meting mislukt: '+de.message; }
+        throw new Error('coco-model: '+e.message+diag);
+      }
     } else {
       try{ await loadScript(LIB.mnet); }catch(e){ throw new Error('mnet-lib: '+e.message); }
       if(typeof mobilenet==='undefined') throw new Error('mobilenet niet gedefinieerd (bestand ontbreekt?)');
