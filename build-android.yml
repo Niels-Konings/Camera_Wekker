@@ -1,0 +1,52 @@
+name: Bouw Android APK
+
+on:
+  workflow_dispatch:        # handmatig starten via de Actions-tab
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code ophalen
+        uses: actions/checkout@v4
+
+      - name: Node installeren
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Afhankelijkheden installeren
+        run: npm ci
+
+      - name: Android-platform toevoegen
+        run: npx cap add android
+
+      - name: Permissies in manifest zetten
+        run: node scripts/patch-android.js
+
+      - name: Java (JDK 17) installeren
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK klaarzetten
+        uses: android-actions/setup-android@v3
+
+      - name: Benodigde SDK-onderdelen installeren
+        run: sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: APK bouwen (debug)
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: APK als download klaarzetten
+        uses: actions/upload-artifact@v4
+        with:
+          name: camera-wekker-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
