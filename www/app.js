@@ -633,15 +633,26 @@ function loadScript(src){
 }
 let tfReady=null;
 function ensureTf(){
-  if(!tfReady) tfReady=(async()=>{ await loadScript(LIB.tf); if(window.tf && tf.ready) await tf.ready(); })();
+  if(!tfReady) tfReady=(async()=>{
+    await loadScript(LIB.tf);
+    if(typeof tf==='undefined') throw new Error('tf niet gedefinieerd na laden van '+LIB.tf);
+    if(tf.ready) await tf.ready();
+  })();
   return tfReady;
 }
 async function ensureModel(engine){
   if(modelState[engine]) return modelState[engine];
   const p=(async()=>{
-    await ensureTf();
-    if(engine==='coco'){ await loadScript(LIB.coco); return await cocoSsd.load({modelUrl:MODEL_URL.coco}); }
-    else { await loadScript(LIB.mnet); return await mobilenet.load({version:2,alpha:1.0,inputRange:[0,1],modelUrl:MODEL_URL.mnet}); }
+    try{ await ensureTf(); }catch(e){ throw new Error('TF: '+e.message); }
+    if(engine==='coco'){
+      try{ await loadScript(LIB.coco); }catch(e){ throw new Error('coco-lib: '+e.message); }
+      if(typeof cocoSsd==='undefined') throw new Error('cocoSsd niet gedefinieerd (bestand ontbreekt?)');
+      try{ return await cocoSsd.load({modelUrl:MODEL_URL.coco}); }catch(e){ throw new Error('coco-model: '+e.message); }
+    } else {
+      try{ await loadScript(LIB.mnet); }catch(e){ throw new Error('mnet-lib: '+e.message); }
+      if(typeof mobilenet==='undefined') throw new Error('mobilenet niet gedefinieerd (bestand ontbreekt?)');
+      try{ return await mobilenet.load({version:2,alpha:1.0,inputRange:[0,1],modelUrl:MODEL_URL.mnet}); }catch(e){ throw new Error('mnet-model: '+e.message); }
+    }
   })();
   modelState[engine]=p;
   try{ return await p; }catch(e){ modelState[engine]=null; throw e; }
@@ -671,7 +682,7 @@ class Detector{
     try{ await this.video.play(); }catch{}
     this.cbs.onCamera && this.cbs.onCamera();
     try{ this.model=await ensureModel(this.obj.engine); }
-    catch(e){ this.cbs.onError && this.cbs.onError('model'); return; }
+    catch(e){ this.cbs.onError && this.cbs.onError('model', e); return; }
     this.cbs.onReady && this.cbs.onReady();
     this.running=true; this.loop();
   }
@@ -746,7 +757,7 @@ function openTest(objectId, pool){
   testDetector=new Detector($('testVideo'),$('testCanvas'),obj,{
     onCamera:()=>{ $('testMsg').innerHTML=`<div class="spinner"></div><div>Model laden…</div>`; $('testStatusText').textContent='Model laden…'; },
     onReady:()=>{ $('testMsg').innerHTML=''; $('testDot').className='status-dot live'; $('testStatusText').textContent=`Richt op ${obj.icon} ${obj.label}`; },
-    onError:(w)=>{ $('testMsg').innerHTML=`<div>⚠️ ${w==='camera'?'Geen toegang tot de camera.':'Model kon niet laden.'}</div>`; $('testStatusText').textContent='Mislukt'; },
+    onError:(w,e)=>{ $('testMsg').innerHTML=`<div style="padding:0 18px;font-size:13px;line-height:1.5">⚠️ ${w==='camera'?'Geen toegang tot de camera.':'Model kon niet laden.<br><span style="opacity:.8">'+((e&&e.message)||'onbekende fout').replace(/</g,'&lt;')+'</span>'}</div>`; $('testStatusText').textContent='Mislukt'; },
     onTick:(prog,info)=>{
       $('testPill').textContent = info.label ? `${info.label} ${(info.score*100|0)}%` : '';
       if(prog>=1){ $('testDot').className='status-dot hit'; $('testStatusText').textContent='✓ Herkend! Alarm zou nu uitgaan.'; }
@@ -819,7 +830,7 @@ function fireAlarm(a, opts){
     ringDetector=new Detector($('ringVideo'),$('ringCanvas'),obj,{
       onCamera:()=>{ $('ringCamMsg').innerHTML=`<div class="spinner"></div><div>Model laden…</div>`; },
       onReady:()=>{ $('ringCamMsg').innerHTML=''; },
-      onError:(w)=>{ $('ringCamMsg').innerHTML=`<div>⚠️ ${w==='camera'?'Geen camera.':'Model laadt niet.'}</div>`; const wait=Math.max(0,lockEnd-Date.now()); ringFallbackTimer=setTimeout(()=>revealStop(a), wait); },
+      onError:(w,e)=>{ $('ringCamMsg').innerHTML=`<div style="padding:0 14px;font-size:12px;line-height:1.4">⚠️ ${w==='camera'?'Geen camera.':'Model laadt niet.<br>'+((e&&e.message)||'').replace(/</g,'&lt;')}</div>`; const wait=Math.max(0,lockEnd-Date.now()); ringFallbackTimer=setTimeout(()=>revealStop(a), wait); },
       canSucceed:()=>ringUnlocked,
       onTick:(prog,info)=>{
         ringHeld = prog>=1;
